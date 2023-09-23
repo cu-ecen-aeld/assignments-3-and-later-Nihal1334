@@ -1,4 +1,10 @@
 #include "systemcalls.h"
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <sys/wait.h>
 
 /**
  * @param cmd the command to execute with system()
@@ -16,7 +22,12 @@ bool do_system(const char *cmd)
  *   and return a boolean true if the system() call completed with success
  *   or false() if it returned a failure
 */
-
+    int ret = system( cmd );
+    if( ret == -1 )
+    {
+	return false;
+    }
+    
     return true;
 }
 
@@ -58,7 +69,36 @@ bool do_exec(int count, ...)
  *   as second argument to the execv() command.
  *
 */
+    fflush(stdout);
+    pid_t process = fork();
+    
+    if( process == -1 )
+    {
+	printf("fork failed");
+	return false;
+    }
 
+    if( process == 0 )
+    {
+ 	execv( command[0], (char**)command ); 
+	perror("execv");
+	exit(1);
+    }
+
+//    pid_t wait_result;
+    int status;
+    if( wait(&status) != 0 )
+    {
+        perror("failed to launch");
+	return false;
+    }
+
+//    while( (wait_result = wait(&status)) != -1 )
+//  {
+//	printf("Process %lu returned result: %d\n", (unsigned long) wait_result, status);
+// }
+
+    printf("All children has finished");
     va_end(args);
 
     return true;
@@ -82,7 +122,7 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
     command[count] = NULL;
     // this line is to avoid a compile warning before your implementation is complete
     // and may be removed
-    command[count] = command[count];
+    //command[count] = command[count];
 
 
 /*
@@ -92,7 +132,38 @@ bool do_exec_redirect(const char *outputfile, int count, ...)
  *   The rest of the behaviour is same as do_exec()
  *
 */
+    int kpid, status, ret;
+    
+    kpid = fork();
+    if( kpid == -1 )
+    {
+	return false;
+    }
+    else
+    {
+	 int fd = open(outputfile, O_WRONLY|O_TRUNC|O_CREAT, 0644);
+         if( fd < 0 )
+	 {
+	     perror("Opening file failed");
+             return false;
+	 }
 
+	ret = execv(command[0], command);
+	if( ret == -1 )
+	{
+	    return false;
+	}
+	else
+	{
+	    exit(1);
+	}
+    }
+
+    wait(&status);
+    if( status == -1 )
+    {
+	return false;
+    }
     va_end(args);
 
     return true;
