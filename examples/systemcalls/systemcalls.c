@@ -80,11 +80,14 @@ bool do_exec(int count, ...)
 
     if( process == 0 )
     {
- 	execv( command[0], (char**)command ); 
-	perror("execv");
-	exit(1);
-    }
+ 	int execv_ret = execv( command[0], (char**)command );
 
+ 	if(execv_ret == -1)
+        {   
+            exit(1);
+        }	
+     }
+    else{
 //    pid_t wait_result;
     int status;
     if( wait(&status) != 0 )
@@ -99,6 +102,7 @@ bool do_exec(int count, ...)
 // }
 
     printf("All children has finished");
+    }
     va_end(args);
 
     return true;
