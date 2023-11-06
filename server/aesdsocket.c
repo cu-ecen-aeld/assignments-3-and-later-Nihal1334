@@ -127,7 +127,7 @@ int main(int argc, char* argv[])
     openlog(NULL, 0, LOG_USER);
     if ((2 == argc) && (strcmp(argv[1], "-d") == 0))
     {
-        syslog(LOG_INFO, "Starting aesdsocket as a daemon");
+        syslog(LOG_INFO, "Starting aesdsocket as a daemon");       
         start_as_daemon = true;
     }
 
@@ -199,11 +199,11 @@ int main(int argc, char* argv[])
     while( 1 )
     {
         //accept the connection and get client fd
-        if(( client_fd = accept(sockfd, (struct sockaddr *)&client_addr, &client_addrlen)) != 0 )
+        if(( client_fd = accept(sockfd, (struct sockaddr *)&client_addr, &client_addrlen)) == FAILURE )
         {
             syslog(LOG_ERR, "Failed to accept connection");
             close_connection();
-            exit(EXIT_FAILURE);
+            return FAILURE;
         }
         printf("Connection accepted");
         // Get the client's IP address from the clientAddr structure
@@ -225,7 +225,7 @@ int main(int argc, char* argv[])
         do
         {
             memset(buf, 0, MAX_BUF_LEN);
-            recv_size = recv(client_fd, buf, MAX_BUF_LEN, 0);
+            recv_size = recv(client_fd, buf, MAX_BUF_LEN-1, 0);
             if( FAILURE == recv_size)
             {
                 syslog(LOG_PERROR, "recv: %s", strerror(errno));
@@ -268,7 +268,7 @@ int main(int argc, char* argv[])
                 send_bytes =  send(client_fd, buf, byte_read, 0);
                 if( send_bytes != byte_read )
                 {
-                    syslog(LOG_PERROR, "send: %s", strerror(errno));
+                  //  syslog(LOG_PERROR, "send: %s", strerror(errno));
                     close(filedesc);
                     close(client_fd);
                     close(sockfd);
